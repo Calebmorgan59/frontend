@@ -1,0 +1,19 @@
+import express from 'express';
+import * as authController from '../controllers/authController.js';
+import { validateRegistration, validateLogin } from '../middleware/validation.js';
+
+const router = express.Router();
+
+// POST /api/auth/register
+router.post('/register', validateRegistration, authController.register);
+
+// POST /api/auth/login
+router.post('/login', validateLogin, authController.login);
+
+// POST /api/auth/logout
+router.post('/logout', authController.logout);
+
+// GET /api/auth/me
+router.get('/me', authController.getMe);
+
+export default router;

@@ -3,18 +3,24 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Provide fallback values for development
-const defaultUrl = 'https://your-project.supabase.co';
-const defaultKey = 'your-anon-key';
-
+// Check if environment variables are properly set
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Supabase environment variables not found. Using fallback values for development.');
+  throw new Error(
+    'Missing Supabase environment variables. Please check your .env file and ensure:\n' +
+    '- VITE_SUPABASE_URL is set to your Supabase project URL\n' +
+    '- VITE_SUPABASE_ANON_KEY is set to your Supabase anon key\n' +
+    'Then restart your development server.'
+  );
 }
 
-export const supabase = createClient(
-  supabaseUrl || defaultUrl, 
-  supabaseAnonKey || defaultKey
-);
+// Validate URL format
+try {
+  new URL(supabaseUrl);
+} catch {
+  throw new Error(`Invalid Supabase URL: ${supabaseUrl}`);
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Helper function to register a new user
 export async function registerUser(userData: {

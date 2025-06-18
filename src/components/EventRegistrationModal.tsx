@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
 
 interface EventRegistrationModalProps {
   isOpen: boolean;
@@ -15,10 +15,11 @@ export const EventRegistrationModal: React.FC<EventRegistrationModalProps> = ({
   eventTitle,
   eventDate 
 }) => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
+    name: user ? `${user.firstName} ${user.lastName}` : '',
+    email: user?.email || '',
+    phone: user?.phone || '',
     requirements: ''
   });
   const [loading, setLoading] = useState(false);
@@ -33,26 +34,32 @@ export const EventRegistrationModal: React.FC<EventRegistrationModalProps> = ({
     setError(null);
 
     try {
-      const { error: registrationError } = await supabase
-        .from('event_registrations')
-        .insert([
-          {
-            event_title: eventTitle,
-            event_date: eventDate,
-            ...formData
-          }
-        ]);
+      const response = await fetch('http://localhost:5000/api/events/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          eventTitle,
+          eventDate,
+          ...formData
+        }),
+      });
 
-      if (registrationError) throw registrationError;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Registration failed');
+      }
 
       setSuccess(true);
       setTimeout(() => {
         onClose();
         setSuccess(false);
         setFormData({
-          name: '',
-          email: '',
-          phone: '',
+          name: user ? `${user.firstName} ${user.lastName}` : '',
+          email: user?.email || '',
+          phone: user?.phone || '',
           requirements: ''
         });
       }, 2000);
@@ -88,7 +95,7 @@ export const EventRegistrationModal: React.FC<EventRegistrationModalProps> = ({
 
           <div className="mb-6">
             <h3 className="font-semibold text-gray-800">{eventTitle}</h3>
-            <p className="text-gray-600">{eventDate}</p>
+            <p className="text-gray-600">{new Date(eventDate).toLocaleDateString()}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -131,6 +138,7 @@ export const EventRegistrationModal: React.FC<EventRegistrationModalProps> = ({
                 onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                 rows={3}
+                placeholder="Any dietary restrictions, accessibility needs, etc."
               />
             </div>
 

@@ -43,12 +43,12 @@ export const validateLogin = (req, res, next) => {
 };
 
 export const validateEventRegistration = (req, res, next) => {
-  const { name, email, eventId } = req.body;
+  const { name, email } = req.body;
 
-  if (!name || !email || !eventId) {
+  if (!name || !email) {
     return res.status(400).json({
       success: false,
-      message: 'Please provide name, email, and eventId'
+      message: 'Please provide name and email'
     });
   }
 

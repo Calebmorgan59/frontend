@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
 
 interface EventIdeaModalProps {
   isOpen: boolean;
@@ -8,9 +8,10 @@ interface EventIdeaModalProps {
 }
 
 export const EventIdeaModal: React.FC<EventIdeaModalProps> = ({ isOpen, onClose }) => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
+    name: user ? `${user.firstName} ${user.lastName}` : '',
+    email: user?.email || '',
     eventTitle: '',
     description: '',
     expectedDate: '',
@@ -29,19 +30,30 @@ export const EventIdeaModal: React.FC<EventIdeaModalProps> = ({ isOpen, onClose 
     setError(null);
 
     try {
-      const { error: submissionError } = await supabase
-        .from('event_ideas')
-        .insert([formData]);
+      const response = await fetch('http://localhost:5000/api/events/ideas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          ...formData,
+          expectedAttendees: parseInt(formData.expectedAttendees)
+        }),
+      });
 
-      if (submissionError) throw submissionError;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to submit event idea');
+      }
 
       setSuccess(true);
       setTimeout(() => {
         onClose();
         setSuccess(false);
         setFormData({
-          name: '',
-          email: '',
+          name: user ? `${user.firstName} ${user.lastName}` : '',
+          email: user?.email || '',
           eventTitle: '',
           description: '',
           expectedDate: '',
@@ -112,6 +124,7 @@ export const EventIdeaModal: React.FC<EventIdeaModalProps> = ({ isOpen, onClose 
                 value={formData.eventTitle}
                 onChange={(e) => setFormData({ ...formData, eventTitle: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                placeholder="e.g., Alumni Tech Meetup"
               />
             </div>
 
@@ -123,6 +136,7 @@ export const EventIdeaModal: React.FC<EventIdeaModalProps> = ({ isOpen, onClose 
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                 rows={4}
+                placeholder="Describe your event idea, objectives, and what attendees will gain..."
               />
             </div>
 
@@ -135,6 +149,7 @@ export const EventIdeaModal: React.FC<EventIdeaModalProps> = ({ isOpen, onClose 
                   value={formData.expectedDate}
                   onChange={(e) => setFormData({ ...formData, expectedDate: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  min={new Date().toISOString().split('T')[0]}
                 />
               </div>
 
@@ -160,6 +175,7 @@ export const EventIdeaModal: React.FC<EventIdeaModalProps> = ({ isOpen, onClose 
                 onChange={(e) => setFormData({ ...formData, expectedAttendees: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                 min="1"
+                placeholder="e.g., 50"
               />
             </div>
 

@@ -140,6 +140,12 @@ export const registerForEvent = async (req, res) => {
       data: registration
     });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'You are already registered for this event'
+      });
+    }
     res.status(400).json({
       success: false,
       message: error.message
